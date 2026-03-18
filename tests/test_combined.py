@@ -3,6 +3,9 @@
 # Requires: adafruit_ssd1306.mpy + adafruit_framebuf.mpy in lib/
 #           font5x8.bin at CIRCUITPY root
 # Wiring: A0=JoyX, A1=JoyY, A2=JoyZ, A3=Buttons, D4=SDA, D5=SCL
+#
+# !! IMPORTANT: Run test_joystick.py first to get your calibration values,
+# then paste them below in the CAL_X/Y/Z lines !!
 
 import board
 import busio
@@ -19,6 +22,15 @@ joy_y = analogio.AnalogIn(board.A1)
 joy_z = analogio.AnalogIn(board.A2)
 btn_adc = analogio.AnalogIn(board.A3)
 
+# ==============================================================
+# CALIBRATION VALUES — paste from test_joystick.py Phase 2 output
+# Format: (min, center, max)
+# ==============================================================
+CAL_X = (400, 30000, 60000)    # <-- REPLACE with your values
+CAL_Y = (400, 30000, 60000)    # <-- REPLACE with your values
+CAL_Z = (400, 3000, 30000)     # <-- REPLACE with your values
+DEADZONE_PCT = 8               # % of range treated as center
+
 # --- Button config (3 wired for now) ---
 BUTTONS = [
     {"name": "B1", "low": 0,     "high": 3000},
@@ -33,15 +45,9 @@ BUTTONS = [
 ]
 NO_PRESS = 55000
 
-# --- Joystick config ---
-# Adjust after running test_joystick.py Phase 1
-CENTER_X = 32768
-CENTER_Y = 32768
-CENTER_Z = 32768
-DEADZONE = 3000
+# --- Helpers ---
 
 def read_avg(adc_pin, n=5):
-    """Read ADC with averaging."""
     total = 0
     for _ in range(n):
         total += adc_pin.value
@@ -54,32 +60,24 @@ def identify_button(val):
             return b["name"]
     return "---" if val > NO_PRESS else "???"
 
-def map_axis(raw, center, deadzone=DEADZONE):
-    """Map raw 16-bit ADC to -99..+99 with deadzone."""
-    diff = raw - center
-    if abs(diff) < deadzone:
-        return 0
-    if diff > 0:
-        maxrange = 65535 - center - deadzone
-        return min(99, int((diff - deadzone) / maxrange * 99)) if maxrange > 0 else 0
-    else:
-        maxrange = center - deadzone
-        return max(-99, int((diff + deadzone) / maxrange * 99)) if maxrange > 0 else 0
+def map_calibrated(raw, cal, deadzone_pct=DEADZONE_PCT):
+    """Map raw ADC to -99..+99 using (min, center, max) calibration."""
+    cal_min, cal_center, cal_max = cal
+    range_low = cal_center - cal_min
+    range_high = cal_max - cal_center
+    dz_low = int(range_low * deadzone_pct / 100)
+    dz_high = int(range_high * deadzone_pct / 100)
 
-# --- Visual helpers ---
-def bar(value, width=20):
-    """Draw a horizontal bar for -99..+99 range.
-    Returns a string like: [====|     ] or [     |===]
-    """
-    mid = width // 2
-    filled = int(abs(value) / 99 * mid)
-    if value >= 0:
-        left = " " * mid
-        right = "=" * filled + " " * (mid - filled)
+    if cal_center - dz_low <= raw <= cal_center + dz_high:
+        return 0
+    if raw < cal_center - dz_low:
+        effective = cal_center - dz_low - raw
+        full_range = range_low - dz_low
+        return max(-99, -int(effective * 99 / full_range)) if full_range > 0 else 0
     else:
-        left = " " * (mid - filled) + "=" * filled
-        right = " " * mid
-    return left + "|" + right
+        effective = raw - (cal_center + dz_high)
+        full_range = range_high - dz_high
+        return min(99, int(effective * 99 / full_range)) if full_range > 0 else 0
 
 # --- Main loop ---
 print("Combined test: OLED + Joystick + Buttons")
@@ -94,9 +92,9 @@ try:
         bval = read_avg(btn_adc)
         btn = identify_button(bval)
 
-        jx = map_axis(read_avg(joy_x), CENTER_X)
-        jy = map_axis(read_avg(joy_y), CENTER_Y)
-        jz = map_axis(read_avg(joy_z), CENTER_Z)
+        jx = map_calibrated(read_avg(joy_x), CAL_X)
+        jy = map_calibrated(read_avg(joy_y), CAL_Y)
+        jz = map_calibrated(read_avg(joy_z), CAL_Z)
 
         if btn != "---" and btn != "???" and last_btn == "---":
             press_count += 1
@@ -107,24 +105,27 @@ try:
         oled.text("DMX Controller", 0, 0, 1)
         oled.text("----------------", 0, 9, 1)
 
-        # Joystick: show mapped values
-        oled.text("X:{:+3d} Y:{:+3d} Z:{:+3d}".format(jx, jy, jz), 0, 20, 1)
+        # Joystick mapped values
+        oled.text("X:{:+3d} Y:{:+3d}".format(jx, jy), 0, 20, 1)
 
-        # Direction indicator
-        dx = "R" if jx > 20 else ("L" if jx < -20 else "-")
-        dy = "U" if jy > 20 else ("D" if jy < -20 else "-")
-        dz = "+" if jz > 20 else ("-" if jz < -20 else "0")
-        oled.text("Dir: {} {} Rot:{}".format(dx, dy, dz), 0, 32, 1)
+        # Z rotation with visual indicator
+        zbar = "=" * (abs(jz) // 10)
+        if jz > 0:
+            oled.text("Z: CW  " + zbar, 0, 30, 1)
+        elif jz < 0:
+            oled.text("Z: CCW " + zbar, 0, 30, 1)
+        else:
+            oled.text("Z: ---", 0, 30, 1)
+
+        # Direction
+        dx = "R" if jx > 15 else ("L" if jx < -15 else "-")
+        dy = "U" if jy > 15 else ("D" if jy < -15 else "-")
+        oled.text("Dir: {} {}".format(dx, dy), 0, 42, 1)
 
         # Button
-        oled.text("Btn: {}".format(btn), 0, 44, 1)
-        oled.text("Presses: {}".format(press_count), 0, 54, 1)
+        oled.text("Btn:{} #{}".format(btn, press_count), 0, 54, 1)
 
         oled.show()
-
-        # Serial output too
-        print(f"Joy X:{jx:+3d} Y:{jy:+3d} Z:{jz:+3d} | Btn:{btn:>3s} | #{press_count}")
-
         time.sleep(0.06)
 
 except KeyboardInterrupt:
