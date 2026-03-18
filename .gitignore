@@ -1,0 +1,15 @@
+# CircuitPython libraries (download separately)
+lib/*.mpy
+lib/adafruit_*/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
