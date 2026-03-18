@@ -28,7 +28,7 @@ btn_adc = analogio.AnalogIn(board.A3)
 # ==============================================================
 CAL_X = (489, 31979, 63522)    # calibrated 2026-03-18
 CAL_Y = (384, 31492, 63666)    # calibrated 2026-03-18
-CAL_Z = (438, 3490, 46071)     # calibrated 2026-03-18
+CAL_Z = (438, 3490, 36000)     # calibrated 2026-03-18 (max adjusted for sustained CW)
 DEADZONE_PCT = 8               # % of range treated as center
 
 # --- Button config (3 wired for now) ---
