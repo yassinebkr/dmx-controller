@@ -26,9 +26,9 @@ btn_adc = analogio.AnalogIn(board.A3)
 # CALIBRATION VALUES — paste from test_joystick.py Phase 2 output
 # Format: (min, center, max)
 # ==============================================================
-CAL_X = (400, 30000, 60000)    # <-- REPLACE with your values
-CAL_Y = (400, 30000, 60000)    # <-- REPLACE with your values
-CAL_Z = (400, 3000, 30000)     # <-- REPLACE with your values
+CAL_X = (489, 31979, 63522)    # calibrated 2026-03-18
+CAL_Y = (384, 31492, 63666)    # calibrated 2026-03-18
+CAL_Z = (438, 3490, 46071)     # calibrated 2026-03-18
 DEADZONE_PCT = 8               # % of range treated as center
 
 # --- Button config (3 wired for now) ---
