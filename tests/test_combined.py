@@ -13,7 +13,10 @@ import time
 import adafruit_ssd1306
 
 # -- Setup ---------------------------------------------------------
-i2c = busio.I2C(scl=board.D5, sda=board.D4)
+# 400kHz I2C -- SSD1306 supports up to 400kHz
+# Default is 100kHz which makes oled.show() take ~100ms (= 10 FPS max)
+# At 400kHz, oled.show() takes ~25ms (= ~40 FPS)
+i2c = busio.I2C(scl=board.D5, sda=board.D4, frequency=400000)
 oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3C)
 
 joy_x = analogio.AnalogIn(board.A0)
@@ -50,13 +53,8 @@ def read_joy(pin):
     return (pin.value + pin.value) >> 1
 
 def read_btn():
-    """Read button ADC -- 3 samples with short delay for stability."""
-    total = btn_adc.value
-    time.sleep(0.001)
-    total += btn_adc.value
-    time.sleep(0.001)
-    total += btn_adc.value
-    return total // 3
+    """Read button ADC -- single sample, fast."""
+    return btn_adc.value
 
 def identify_button(val):
     """Match ADC value to a button name using thresholds."""
