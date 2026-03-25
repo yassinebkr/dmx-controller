@@ -1,6 +1,6 @@
 # DMX Lyre Controller
 
-Wireless DMX controller for a motorized lyre — school group project.
+Wireless DMX controller for a motorized lyre — school group project (BTS SN, Jules Ferry 2026).
 
 ## Hardware
 
@@ -8,8 +8,8 @@ Wireless DMX controller for a motorized lyre — school group project.
 |-----------|------|
 | Seeed XIAO RP2040 | Main controller (CircuitPython) |
 | XBee S1 802.15.4 | Wireless radio (transparent UART) |
-| SSD1306 128×64 OLED | Display (I2C) |
-| 3-axis joystick | Pan/Tilt/Rotation control |
+| SSD1306 128×64 OLED | Display (I2C, 0x3C) |
+| 3-axis joystick | Pan/Tilt/Rotation control (3 pots, no button) |
 | 8 push buttons | DMX channel presets (resistor ladder on single ADC pin) |
 
 ## Pin Budget
@@ -42,6 +42,18 @@ Wireless DMX controller for a motorized lyre — school group project.
 
 All E24 standard values. Minimum gap: 359 counts (22× noise margin).
 
+Currently wired: B1–B3. Remaining B4–B8 to be added.
+
+## Joystick Calibration
+
+| Axis | Min | Center | Max |
+|------|-----|--------|-----|
+| X | 489 | 31,979 | 63,522 |
+| Y | 384 | 31,492 | 63,666 |
+| Z | 438 | 3,490 | 36,000 |
+
+Note: Z crosstalk on X/Y (~10-12 counts). CircuitPython ADC = 16-bit (0–65535).
+
 ## XBee Wireless Link
 
 Point-to-point transparent UART between controller (XIAO) and receiver (PC).
@@ -62,20 +74,43 @@ Point-to-point transparent UART between controller (XIAO) and receiver (PC).
 ## Project Structure
 
 ```
-├── config/          # Module configuration
-│   ├── xbee_setup.py        # Run once to program controller XBee
-│   └── XBEE_CONFIG.md       # Network settings for both modules
-├── tests/           # Hardware test scripts
-│   ├── test_oled.py
-│   ├── test_buttons.py
-│   ├── test_joystick.py
-│   ├── test_combined.py
-│   └── xbee_config_and_test.py
-├── lib/             # CircuitPython libraries (not committed)
-├── src/             # Main application code
-├── docs/            # Datasheets, pinouts, project briefs
-└── code.py          # Entry point (copy to CIRCUITPY)
+dmx-controller/
+├── config/                         # XBee module configuration
+│   ├── XBEE_CONFIG.md              # Network settings reference (both modules)
+│   ├── xbee_setup.py               # Full config script with verify (run once)
+│   └── config_xbee.py              # Minimal config script
+├── docs/                           # Datasheets & project briefs
+│   ├── xbeemodule_ds.pdf           # XBee S1 datasheet
+│   ├── rp2040_datasheet.pdf        # RP2040 datasheet
+│   ├── xiaorp2040_pinout.jpg       # XIAO RP2040 pinout diagram
+│   ├── XIAO-RP2040-pinout_sheet.xlsx
+│   ├── ClubSpot 150 CT DMX charts.pdf
+│   └── Fiche presentation projet E62 - *.pdf  # Project briefs
+├── tests/                          # Hardware test scripts
+│   ├── test_oled.py                # OLED display test
+│   ├── test_buttons.py             # Button ladder ADC test
+│   ├── test_joystick.py            # Joystick with auto-calibration
+│   ├── test_combined.py            # All inputs + OLED display
+│   ├── test_xbee.py                # XBee diagnostic (AT command check)
+│   └── xbee_config_and_test.py     # XBee config + bidirectional comms test
+├── src/                            # Main application (TODO)
+├── lib/                            # CircuitPython libraries (not committed)
+├── .gitignore
+└── README.md
 ```
+
+## Status
+
+- [x] Joystick wiring + calibration (3-axis)
+- [x] OLED SSD1306 I2C display
+- [x] Button ladder (3/8 wired)
+- [x] 5 test scripts (oled, buttons, joystick, combined, xbee)
+- [x] XBee UART communication confirmed (firmware 8073)
+- [x] XBee network configured (controller + PC receiver)
+- [ ] Bidirectional XBee comms test
+- [ ] Wire remaining 5 buttons (B4–B8)
+- [ ] Main application (joystick + buttons → XBee → DMX)
+- [ ] PCB layout (Proteus)
 
 ## Setup
 
@@ -83,10 +118,10 @@ Point-to-point transparent UART between controller (XIAO) and receiver (PC).
 2. Copy required libraries to `CIRCUITPY/lib/`:
    - `adafruit_ssd1306.mpy`
    - `adafruit_framebuf.mpy`
-   - `font5x8.bin` (to CIRCUITPY root, not lib)
-3. Configure XBee modules — see [XBee config](config/XBEE_CONFIG.md)
-4. Copy a test script to `CIRCUITPY/code.py` to run it
-5. Open serial console: `screen /dev/ttyACM0 115200`
+3. Copy `font5x8.bin` to CIRCUITPY root (required for OLED text)
+4. Configure XBee modules — see [XBee config](config/XBEE_CONFIG.md)
+5. Copy a test script to `CIRCUITPY/code.py` to run it
+6. Serial console: `screen /dev/ttyACM0 115200`
 
 ## License
 
