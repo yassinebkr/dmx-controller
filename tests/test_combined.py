@@ -26,7 +26,13 @@ btn_adc = analogio.AnalogIn(board.A3)
 # -- Load font ---------------------------------------------------------
 try:
     with open("font5x8.bin", "rb") as f:
-        FONT = f.read()
+        raw = f.read()
+    # font5x8.bin may have a 2-byte header (1282 bytes instead of 1280)
+    # Skip header so character lookups are aligned correctly
+    if len(raw) == 1282:
+        FONT = raw[2:]
+    else:
+        FONT = raw
 except OSError:
     print("ERROR: font5x8.bin not found on CIRCUITPY root!")
     raise SystemExit

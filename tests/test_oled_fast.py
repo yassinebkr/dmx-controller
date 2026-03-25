@@ -25,8 +25,13 @@ oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3C)
 # Each character is 5 columns of 8-bit vertical bitmaps
 try:
     with open("font5x8.bin", "rb") as f:
-        FONT = f.read()
-    print("Font loaded: " + str(len(FONT)) + " bytes")
+        raw = f.read()
+    # font5x8.bin may have a 2-byte header (1282 vs 1280 bytes)
+    if len(raw) > 1280:
+        FONT = raw[len(raw) - 1280:]
+    else:
+        FONT = raw
+    print("Font loaded: " + str(len(FONT)) + " bytes (stripped header)")
 except OSError:
     print("ERROR: font5x8.bin not found on CIRCUITPY root!")
     raise SystemExit
