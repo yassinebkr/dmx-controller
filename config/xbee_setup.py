@@ -7,7 +7,7 @@ Purpose:
     and persist across power cycles.
 
 How it works:
-    1. Enters AT command mode (1s silence → +++ → 1s silence)
+    1. Enters AT command mode (1s silence -> +++ -> 1s silence)
     2. Writes PAN ID, channel, addresses, baud rate
     3. Reads back each setting to verify
     4. Saves to flash with ATWR
@@ -27,13 +27,13 @@ import busio
 # ── XBee Network Configuration ──────────────────────────────────
 # These values define the wireless link between controller and receiver.
 # The PC-side module must have MIRRORED MY/DL values.
-# Example: controller MY=1,DL=2 ↔ receiver MY=2,DL=1
+# Example: controller MY=1,DL=2 <-> receiver MY=2,DL=1
 #
 # PAN_ID and CHANNEL must be identical on both modules.
 # BAUD index: 0=1200, 1=2400, 2=4800, 3=9600, 4=19200, 5=38400, 6=57600, 7=115200
 
-PAN_ID    = "1234"   # Network ID (0–65535) — must match both modules
-CHANNEL   = "0C"     # Channel 12 in hex (valid: 0B–1A = 11–26) — must match both
+PAN_ID    = "1234"   # Network ID (0-65535) — must match both modules
+CHANNEL   = "0C"     # Channel 12 in hex (valid: 0B-1A = 11-26) — must match both
 MY_ADDR   = "0001"   # This module's 16-bit address in hex (controller = 1)
 DEST_ADDR = "0002"   # Destination address in hex (PC receiver = 2)
 BAUD      = "3"      # Baud rate index: 3 = 9600
@@ -41,8 +41,8 @@ BAUD      = "3"      # Baud rate index: 3 = 9600
 # ── End Configuration ────────────────────────────────────────────
 
 # Initialize UART on XIAO RP2040 pins:
-#   D6 (TX) → XBee DIN (pin 3)  — data TO the XBee
-#   D7 (RX) ← XBee DOUT (pin 2) — data FROM the XBee
+#   D6 (TX) -> XBee DIN (pin 3)  — data TO the XBee
+#   D7 (RX) <- XBee DOUT (pin 2) — data FROM the XBee
 uart = busio.UART(board.D6, board.D7, baudrate=9600, timeout=2)
 
 
@@ -69,7 +69,7 @@ def enter_command_mode():
     """
     Enter AT command mode.
 
-    The XBee requires a specific sequence to enter command mode:
+    The XBee requires a specific sequence:
     1. At least 1 second of silence (guard time, GT=0x3E8 = 1000ms)
     2. Send '+++' (no carriage return!)
     3. At least 1 second of silence
@@ -80,7 +80,7 @@ def enter_command_mode():
     """
     print("Entering command mode...")
     time.sleep(1.1)    # Guard time before +++
-    uart.write(b"+++") # No \r — this is NOT an AT command
+    uart.write(b"+++") # No \\r — this is NOT an AT command
     time.sleep(1.5)    # Guard time after +++
     resp = uart.read(64)
     if resp and b"OK" in resp:
@@ -120,7 +120,7 @@ if enter_command_mode():
     send_at("ATWR")
 
     # Exit command mode — module returns to transparent UART operation
-    # (data written to UART is transmitted over the air)
+    # (data written to UART is now transmitted over the air)
     print("\nExiting command mode...")
     send_at("ATCN")
 
