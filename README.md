@@ -44,7 +44,7 @@ All E24 standard values. Minimum gap: 359 counts (22× noise margin).
 
 ## XBee Wireless Link
 
-Point-to-point transparent UART between controller and PC receiver.
+Point-to-point transparent UART between controller (XIAO) and receiver (PC).
 
 | Setting | Controller (XIAO) | Receiver (PC USB-TTL) |
 |---------|-------------------|----------------------|
@@ -52,11 +52,12 @@ Point-to-point transparent UART between controller and PC receiver.
 | Channel | 12 | 12 |
 | MY Address | 1 | 2 |
 | Destination (DL) | 2 | 1 |
-| Baud | 9600 | 9600 |
+| Baud Rate | 9600 | 9600 |
+| Mode | Transparent (AP=0) | Transparent (AP=0) |
 
-- **Controller config:** run `config/xbee_setup.py` once on the XIAO
-- **Receiver config:** set via XCTU
-- Full details in [`config/XBEE_CONFIG.md`](config/XBEE_CONFIG.md)
+- **Controller config:** run `config/xbee_setup.py` on the XIAO (once — saves to flash)
+- **PC config:** use XCTU to set the matching values (see `config/XBEE_CONFIG.md`)
+- **Firmware:** 8073 (XBee S1 802.15.4)
 
 ## Project Structure
 

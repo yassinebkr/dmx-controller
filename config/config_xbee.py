@@ -19,11 +19,11 @@ resp = uart.read(64)
 print(f"CMD mode: {resp}")  # Should print b'OK'
 
 # Configure Module B (controller)
-print("MY:", xbee_cmd("ATMY2"))      # My address = 2
-print("DL:", xbee_cmd("ATDL1"))      # Send to Module A (address 1)
+print("ID:", xbee_cmd("ATID1234"))   # PAN ID — must match both modules
+print("CH:", xbee_cmd("ATCH0C"))     # Channel 12 — must match both modules
+print("MY:", xbee_cmd("ATMY1"))      # My address = 1 (controller)
+print("DL:", xbee_cmd("ATDL2"))      # Send to address 2 (PC receiver)
 print("DH:", xbee_cmd("ATDH0"))      # 16-bit addressing
-print("ID:", xbee_cmd("ATID1234"))   # PAN ID
-print("CH:", xbee_cmd("ATCH0C"))     # Channel C (default)
 print("BD:", xbee_cmd("ATBD3"))      # 9600 baud
 
 # Save to flash (survives power cycle)
@@ -32,4 +32,4 @@ print("WR:", xbee_cmd("ATWR"))       # Write to flash
 # Exit command mode
 print("CN:", xbee_cmd("ATCN"))       # Back to transparent mode
 
-print("Done! Module B configured.")
+print("Done! Controller XBee configured (MY=1, DL=2).")
