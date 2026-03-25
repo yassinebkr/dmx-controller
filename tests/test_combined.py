@@ -95,44 +95,49 @@ print("Ctrl+C to stop")
 
 press_count = 0
 last_btn = "---"
+frame = 0
+
+# Static text -- draw once, then only update dynamic parts
+oled.fill(0)
+oled.text("DMX Controller", 0, 0, 1)
+oled.text("----------------", 0, 9, 1)
+oled.show()
 
 try:
     while True:
-        # Read button first -- highest priority for responsiveness
+        # Read button every cycle -- instant response
         btn = identify_button(read_btn())
-
-        # Count presses (rising edge: released -> pressed)
         if btn != "---" and btn != "???" and last_btn == "---":
             press_count += 1
         last_btn = btn
 
-        # Read joystick axes
+        # Read joystick every cycle
         jx = map_cal(read_joy(joy_x), CAL_X)
         jy = map_cal(read_joy(joy_y), CAL_Y)
         jz = map_cal(read_joy(joy_z), CAL_Z)
 
-        # Direction labels
-        dx = "R" if jx > 15 else ("L" if jx < -15 else "-")
-        dy = "U" if jy > 15 else ("D" if jy < -15 else "-")
+        # Update OLED every 3rd cycle -- display is slow, inputs are fast
+        frame += 1
+        if frame >= 3:
+            frame = 0
 
-        # Update OLED
-        oled.fill(0)
-        oled.text("DMX Controller", 0, 0, 1)
-        oled.text("----------------", 0, 9, 1)
-        oled.text("X:{:+3d} Y:{:+3d}".format(jx, jy), 0, 20, 1)
+            oled.fill(0)
+            oled.text("DMX Controller", 0, 0, 1)
+            oled.text("----------------", 0, 9, 1)
+            oled.text("X:{:+3d} Y:{:+3d}".format(jx, jy), 0, 20, 1)
 
-        # Z rotation bar
-        zbar = "=" * (abs(jz) // 10)
-        if jz > 0:
-            oled.text("Z: CW  " + zbar, 0, 30, 1)
-        elif jz < 0:
-            oled.text("Z: CCW " + zbar, 0, 30, 1)
-        else:
-            oled.text("Z: ---", 0, 30, 1)
+            if jz > 0:
+                oled.text("Z: CW  " + "=" * (abs(jz) // 10), 0, 30, 1)
+            elif jz < 0:
+                oled.text("Z: CCW " + "=" * (abs(jz) // 10), 0, 30, 1)
+            else:
+                oled.text("Z: ---", 0, 30, 1)
 
-        oled.text("Dir: {} {}".format(dx, dy), 0, 42, 1)
-        oled.text("Btn:{} #{}".format(btn, press_count), 0, 54, 1)
-        oled.show()  # I2C transfer ~20ms -- this IS the frame delay
+            dx = "R" if jx > 15 else ("L" if jx < -15 else "-")
+            dy = "U" if jy > 15 else ("D" if jy < -15 else "-")
+            oled.text("Dir: {} {}".format(dx, dy), 0, 42, 1)
+            oled.text("Btn:{} #{}".format(btn, press_count), 0, 54, 1)
+            oled.show()
 
 except KeyboardInterrupt:
     oled.fill(0)
