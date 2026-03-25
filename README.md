@@ -42,16 +42,37 @@ Wireless DMX controller for a motorized lyre — school group project.
 
 All E24 standard values. Minimum gap: 359 counts (22× noise margin).
 
+## XBee Wireless Link
+
+Point-to-point transparent UART between controller and PC receiver.
+
+| Setting | Controller (XIAO) | Receiver (PC USB-TTL) |
+|---------|-------------------|----------------------|
+| PAN ID | 1234 | 1234 |
+| Channel | 12 | 12 |
+| MY Address | 1 | 2 |
+| Destination (DL) | 2 | 1 |
+| Baud | 9600 | 9600 |
+
+- **Controller config:** run `config/xbee_setup.py` once on the XIAO
+- **Receiver config:** set via XCTU
+- Full details in [`config/XBEE_CONFIG.md`](config/XBEE_CONFIG.md)
+
 ## Project Structure
 
 ```
+├── config/          # Module configuration
+│   ├── xbee_setup.py        # Run once to program controller XBee
+│   └── XBEE_CONFIG.md       # Network settings for both modules
 ├── tests/           # Hardware test scripts
 │   ├── test_oled.py
 │   ├── test_buttons.py
-│   └── test_combined.py
+│   ├── test_joystick.py
+│   ├── test_combined.py
+│   └── xbee_config_and_test.py
 ├── lib/             # CircuitPython libraries (not committed)
 ├── src/             # Main application code
-├── docs/            # Wiring diagrams, datasheets
+├── docs/            # Datasheets, pinouts, project briefs
 └── code.py          # Entry point (copy to CIRCUITPY)
 ```
 
@@ -61,8 +82,10 @@ All E24 standard values. Minimum gap: 359 counts (22× noise margin).
 2. Copy required libraries to `CIRCUITPY/lib/`:
    - `adafruit_ssd1306.mpy`
    - `adafruit_framebuf.mpy`
-3. Copy a test script to `CIRCUITPY/code.py` to run it
-4. Open serial console: `screen /dev/ttyACM0 115200`
+   - `font5x8.bin` (to CIRCUITPY root, not lib)
+3. Configure XBee modules — see [XBee config](config/XBEE_CONFIG.md)
+4. Copy a test script to `CIRCUITPY/code.py` to run it
+5. Open serial console: `screen /dev/ttyACM0 115200`
 
 ## License
 
