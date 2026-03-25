@@ -77,8 +77,7 @@ Point-to-point transparent UART between controller (XIAO) and receiver (PC).
 dmx-controller/
 ├── config/                         # XBee module configuration
 │   ├── XBEE_CONFIG.md              # Network settings reference (both modules)
-│   ├── xbee_setup.py               # Full config script with verify (run once)
-│   └── config_xbee.py              # Minimal config script
+│   └── xbee_setup.py               # Config script — run once, saves to flash
 ├── docs/                           # Datasheets & project briefs
 │   ├── xbeemodule_ds.pdf           # XBee S1 datasheet
 │   ├── rp2040_datasheet.pdf        # RP2040 datasheet
@@ -91,8 +90,7 @@ dmx-controller/
 │   ├── test_buttons.py             # Button ladder ADC test
 │   ├── test_joystick.py            # Joystick with auto-calibration
 │   ├── test_combined.py            # All inputs + OLED display
-│   ├── test_xbee.py                # XBee diagnostic (AT command check)
-│   └── xbee_config_and_test.py     # XBee config + bidirectional comms test
+│   └── test_xbee.py                # XBee bidirectional comms test
 ├── src/                            # Main application (TODO)
 ├── lib/                            # CircuitPython libraries (not committed)
 ├── .gitignore
@@ -104,9 +102,8 @@ dmx-controller/
 - [x] Joystick wiring + calibration (3-axis)
 - [x] OLED SSD1306 I2C display
 - [x] Button ladder (3/8 wired)
-- [x] 5 test scripts (oled, buttons, joystick, combined, xbee)
 - [x] XBee UART communication confirmed (firmware 8073)
-- [x] XBee network configured (controller + PC receiver)
+- [x] XBee network configured (controller MY=1 + PC receiver MY=2)
 - [ ] Bidirectional XBee comms test
 - [ ] Wire remaining 5 buttons (B4–B8)
 - [ ] Main application (joystick + buttons → XBee → DMX)
