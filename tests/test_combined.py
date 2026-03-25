@@ -1,10 +1,11 @@
 # test_combined.py -- OLED + Buttons + Joystick combined test
-# Shows all inputs on the OLED in real-time
-# Requires: adafruit_ssd1306.mpy + adafruit_framebuf.mpy in lib/
-#           font5x8.bin at CIRCUITPY root
-# Wiring: A0=JoyX, A1=JoyY, A2=JoyZ, A3=Buttons, D4=SDA, D5=SCL
+# ============================================================
+# Shows all inputs on the OLED in real-time using fast direct
+# framebuffer writes (~40 FPS vs 3 FPS with oled.text()).
 #
-# Calibration: run test_joystick.py first to get your CAL_X/Y/Z values
+# Requires: adafruit_ssd1306.mpy in lib/, font5x8.bin at CIRCUITPY root
+# Wiring: A0=JoyX, A1=JoyY, A2=JoyZ, A3=Buttons, D4=SDA, D5=SCL
+# Calibration: run test_joystick.py first to get CAL_X/Y/Z values
 
 import board
 import busio
@@ -12,11 +13,9 @@ import analogio
 import time
 import adafruit_ssd1306
 
-# -- Setup ---------------------------------------------------------
-# 400kHz I2C -- SSD1306 supports up to 400kHz
-# Default is 100kHz which makes oled.show() take ~100ms (= 10 FPS max)
-# At 400kHz, oled.show() takes ~25ms (= ~40 FPS)
-i2c = busio.I2C(scl=board.D5, sda=board.D4, frequency=400000)
+# -- Setup -------------------------------------------------------------
+# 1MHz I2C -- SSD1306 handles it (84 FPS raw transfer proven)
+i2c = busio.I2C(scl=board.D5, sda=board.D4, frequency=1_000_000)
 oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c, addr=0x3C)
 
 joy_x = analogio.AnalogIn(board.A0)
@@ -24,40 +23,62 @@ joy_y = analogio.AnalogIn(board.A1)
 joy_z = analogio.AnalogIn(board.A2)
 btn_adc = analogio.AnalogIn(board.A3)
 
-# -- Joystick calibration (from test_joystick.py Phase 2) ----------
-CAL_X = (489, 31979, 63522)    # calibrated 2026-03-18
-CAL_Y = (384, 31492, 63666)    # calibrated 2026-03-18
-CAL_Z = (438, 3490, 36000)     # calibrated 2026-03-18
-DEADZONE_PCT = 8               # % of range treated as center
+# -- Load font ---------------------------------------------------------
+try:
+    with open("font5x8.bin", "rb") as f:
+        FONT = f.read()
+except OSError:
+    print("ERROR: font5x8.bin not found on CIRCUITPY root!")
+    raise SystemExit
 
-# -- Button thresholds (resistor ladder on A3) ---------------------
-# 2k pull-up to 3.3V, buttons to GND through individual resistors
-# CircuitPython ADC = 16-bit (0-65535)
+# -- Fast framebuffer text ---------------------------------------------
+buf = oled.buf
+
+def fast_text(text, x, page):
+    """Write text directly to framebuffer -- 13x faster than oled.text()."""
+    offset = page * 128 + x
+    for ch in text:
+        idx = ord(ch) * 5
+        if offset + 5 > 1024:
+            break
+        buf[offset] = FONT[idx]
+        buf[offset + 1] = FONT[idx + 1]
+        buf[offset + 2] = FONT[idx + 2]
+        buf[offset + 3] = FONT[idx + 3]
+        buf[offset + 4] = FONT[idx + 4]
+        offset += 6  # 5px char + 1px gap
+
+def clear_pages(start, end):
+    """Clear a range of pages (8px rows each)."""
+    for i in range(start * 128, (end + 1) * 128):
+        buf[i] = 0
+
+# -- Joystick calibration (from test_joystick.py) ---------------------
+CAL_X = (489, 31979, 63522)
+CAL_Y = (384, 31492, 63666)
+CAL_Z = (438, 3490, 36000)
+DEADZONE_PCT = 8
+
+# -- Button thresholds (resistor ladder on A3) -------------------------
 BUTTONS = [
-    ("B1", 0,     3000),     # 0 ohm
-    ("B2", 3000,  10000),    # 220 ohm
-    ("B3", 10000, 20000),    # 560 ohm
-    # Uncomment as you wire more buttons:
-    # ("B4", 20000, 25000),  # 1k ohm
-    # ("B5", 25000, 33000),  # 1.5k ohm
-    # ("B6", 33000, 40500),  # 2.7k ohm
-    # ("B7", 40500, 47000),  # 3.9k ohm
-    # ("B8", 47000, 55000),  # 6.8k ohm
+    ("B1", 0,     3000),
+    ("B2", 3000,  10000),
+    ("B3", 10000, 20000),
+    # ("B4", 20000, 25000),
+    # ("B5", 25000, 33000),
+    # ("B6", 33000, 40500),
+    # ("B7", 40500, 47000),
+    # ("B8", 47000, 55000),
 ]
-NO_PRESS = 55000  # above this = no button pressed
+NO_PRESS = 55000
 
-# -- Helpers -------------------------------------------------------
+# -- Helpers -----------------------------------------------------------
 
 def read_joy(pin):
-    """Read joystick axis -- 2 samples, no delay (fast)."""
-    return (pin.value + pin.value) >> 1
-
-def read_btn():
-    """Read button ADC -- single sample, fast."""
-    return btn_adc.value
+    """Single-read joystick axis."""
+    return pin.value
 
 def identify_button(val):
-    """Match ADC value to a button name using thresholds."""
     for name, low, high in BUTTONS:
         if low <= val <= high:
             return name
@@ -82,66 +103,68 @@ def map_cal(raw, cal):
         full_range = range_high - dz_high
         return min(99, int(effective * 99 / full_range)) if full_range > 0 else 0
 
-# -- Main loop -----------------------------------------------------
-# Target: ~30 FPS
-# Loop time budget:
-#   - Joystick reads (3 axes, 2 samples each): ~1ms
-#   - Button read (3 samples, 1ms delay): ~3ms
-#   - OLED fill + text + show (I2C transfer): ~20ms
-#   - No extra sleep needed -- I2C is the natural frame limiter
+def num_to_str(n):
+    """Format number as +XX or -XX with padding."""
+    if n >= 0:
+        s = "+" + str(n)
+    else:
+        s = str(n)
+    while len(s) < 4:
+        s = " " + s
+    return s
 
-print("Combined test: OLED + Joystick + Buttons")
-print("Ctrl+C to stop")
+# -- Draw static header (once) ----------------------------------------
+clear_pages(0, 7)
+fast_text("DMX Controller", 0, 0)
+fast_text("----------------", 0, 1)
+oled.show()
+
+# -- Main loop ---------------------------------------------------------
+print("Combined test (fast OLED) -- Ctrl+C to stop")
 
 press_count = 0
 last_btn = "---"
-frame = 0
-
-# Static text -- draw once, then only update dynamic parts
-oled.fill(0)
-oled.text("DMX Controller", 0, 0, 1)
-oled.text("----------------", 0, 9, 1)
-oled.show()
 
 try:
     while True:
-        # Read button every cycle -- instant response
-        btn = identify_button(read_btn())
+        # Read inputs
+        btn = identify_button(btn_adc.value)
         if btn != "---" and btn != "???" and last_btn == "---":
             press_count += 1
         last_btn = btn
 
-        # Read joystick every cycle
         jx = map_cal(read_joy(joy_x), CAL_X)
         jy = map_cal(read_joy(joy_y), CAL_Y)
         jz = map_cal(read_joy(joy_z), CAL_Z)
 
-        # Update OLED every 3rd cycle -- display is slow, inputs are fast
-        frame += 1
-        if frame >= 3:
-            frame = 0
+        # Clear only dynamic pages (2-6), keep header
+        clear_pages(2, 6)
 
-            oled.fill(0)
-            oled.text("DMX Controller", 0, 0, 1)
-            oled.text("----------------", 0, 9, 1)
-            oled.text("X:{:+3d} Y:{:+3d}".format(jx, jy), 0, 20, 1)
+        # Joystick XY
+        fast_text("X:" + num_to_str(jx) + " Y:" + num_to_str(jy), 0, 2)
 
-            if jz > 0:
-                oled.text("Z: CW  " + "=" * (abs(jz) // 10), 0, 30, 1)
-            elif jz < 0:
-                oled.text("Z: CCW " + "=" * (abs(jz) // 10), 0, 30, 1)
-            else:
-                oled.text("Z: ---", 0, 30, 1)
+        # Z rotation with bar
+        zabs = abs(jz) // 10
+        if jz > 0:
+            fast_text("Z: CW  " + "=" * zabs, 0, 3)
+        elif jz < 0:
+            fast_text("Z: CCW " + "=" * zabs, 0, 3)
+        else:
+            fast_text("Z: ---", 0, 3)
 
-            dx = "R" if jx > 15 else ("L" if jx < -15 else "-")
-            dy = "U" if jy > 15 else ("D" if jy < -15 else "-")
-            oled.text("Dir: {} {}".format(dx, dy), 0, 42, 1)
-            oled.text("Btn:{} #{}".format(btn, press_count), 0, 54, 1)
-            oled.show()
+        # Direction
+        dx = "R" if jx > 15 else ("L" if jx < -15 else "-")
+        dy = "U" if jy > 15 else ("D" if jy < -15 else "-")
+        fast_text("Dir: " + dx + " " + dy, 0, 4)
+
+        # Button
+        fast_text("Btn:" + btn + " #" + str(press_count), 0, 5)
+
+        oled.show()
 
 except KeyboardInterrupt:
-    oled.fill(0)
-    oled.text("Test done!", 0, 20, 1)
-    oled.text("{} presses".format(press_count), 0, 32, 1)
+    clear_pages(0, 7)
+    fast_text("Test done!", 0, 2)
+    fast_text(str(press_count) + " presses", 0, 3)
     oled.show()
     print("\nDone. " + str(press_count) + " presses.")
