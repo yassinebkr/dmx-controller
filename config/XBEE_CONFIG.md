@@ -38,13 +38,17 @@ BAUD      = "3"      # Baud rate index: 3 = 9600
 3. Set: **ID=1234, CH=C, MY=2, DL=1, DH=0**
 4. Click **Write** to save to flash
 
+## Communication Direction
+
+The controller is **TX only** — it sends DMX commands to the receiver.
+No data flows back from the receiver to the controller.
+
 ## Testing
 
 After both modules are configured:
 1. Open XCTU Console on the PC
 2. Copy `tests/test_xbee.py` to `CIRCUITPY/code.py`
-3. "Hello from XIAO #0" through #4 should appear in XCTU Console
-4. Type in XCTU Console — text appears in XIAO serial output
+3. "Hello from XIAO" messages should appear in XCTU Console
 
 ## Reference
 
