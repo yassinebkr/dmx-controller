@@ -102,9 +102,10 @@ dmx-controller/
 - [x] Joystick wiring + calibration (3-axis)
 - [x] OLED SSD1306 I2C display
 - [x] Button ladder (3/8 wired)
-- [x] XBee UART communication confirmed (firmware 8073)
-- [x] XBee network configured (controller MY=1 + PC receiver MY=2)
-- [ ] Bidirectional XBee comms test
+- [x] Test scripts (oled, buttons, joystick, combined, xbee)
+- [x] XBee UART confirmed (firmware 8073)
+- [x] XBee network configured (PAN 1234, controller MY=1, PC MY=2)
+- [ ] Bidirectional XBee comms verified
 - [ ] Wire remaining 5 buttons (B4–B8)
 - [ ] Main application (joystick + buttons → XBee → DMX)
 - [ ] PCB layout (Proteus)
