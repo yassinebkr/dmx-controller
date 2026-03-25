@@ -65,53 +65,30 @@ def send_at(cmd):
     return resp
 
 
-def enter_command_mode(retries=3):
+def enter_command_mode():
     """
-    Enter AT command mode with retry logic.
+    Enter AT command mode.
 
     The XBee requires: 1s silence -> +++ -> 1s silence -> OK response.
-
-    Common failure causes:
-    - XBee already in command mode from a previous script
-    - Serial data broke the guard time silence
-    - Board restart sent output during guard time
-
-    This function handles all cases:
-    - First sends ATCN to exit any existing command mode
-    - Flushes the UART buffer
-    - Retries up to 3 times with increasing wait
+    If it fails, unplug and replug the USB-C cable and try again.
     """
-    # In case XBee is stuck in command mode from a previous run,
-    # send ATCN to exit first, then start fresh
+    # In case XBee is stuck in command mode from a previous run
     uart.write(b"ATCN\r")
     time.sleep(0.5)
-    uart.read(64)  # flush response
+    uart.read(64)  # flush
 
-    for attempt in range(retries):
-        print("Entering command mode (attempt " + str(attempt + 1) + ")...")
+    print("Entering command mode...")
+    uart.read(128)     # flush any leftover data
+    time.sleep(1.5)    # guard time before +++
+    uart.write(b"+++") # no \r!
+    time.sleep(1.5)    # guard time after +++
+    resp = uart.read(64)
 
-        # Flush any leftover data in the UART buffer
-        uart.read(128)
+    if resp and b"OK" in resp:
+        print("  OK -- command mode active")
+        return True
 
-        # Guard time -- must be COMPLETE SILENCE on UART
-        # Increase wait on each retry for reliability
-        wait = 1.5 + attempt
-        time.sleep(wait)
-
-        # Send +++ (NO carriage return -- this is special, not an AT command)
-        uart.write(b"+++")
-
-        # Wait for guard time after +++
-        time.sleep(1.5)
-
-        resp = uart.read(64)
-        if resp and b"OK" in resp:
-            print("  OK -- command mode active")
-            return True
-
-        print("  No response, retrying...")
-
-    print("  FAILED after " + str(retries) + " attempts")
+    print("  FAILED -- no OK response")
     return False
 
 
@@ -152,8 +129,5 @@ if enter_command_mode():
     print("  Controller: MY=1, DL=2, PAN=1234, CH=12")
     print("  Replace code.py with your main application.")
 else:
-    print("\nCould not enter command mode after 3 attempts.")
-    print("Try:")
-    print("  1. Unplug and replug the XIAO (full power cycle)")
-    print("  2. Make sure wiring is correct: D6->DIN, D7<-DOUT")
-    print("  3. Run again")
+    print("\nCould not enter command mode.")
+    print("Unplug and replug the USB-C cable, then try again.")
