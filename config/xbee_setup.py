@@ -91,9 +91,14 @@ def enter_command_mode():
 
 
 # ── Main Script ──────────────────────────────────────────────────
+# Wait 2 seconds on startup to guarantee guard time silence.
+# Without this, a board restart can send serial output (boot messages)
+# that breaks the 1-second silence required before +++.
 print("=" * 40)
 print("  XBee S1 Configuration Script")
 print("=" * 40)
+print("Waiting 2s for clean guard time...")
+time.sleep(2)
 
 if enter_command_mode():
     # Write all network parameters
