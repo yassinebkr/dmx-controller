@@ -39,13 +39,16 @@ except OSError:
 
 # -- Fast framebuffer text ---------------------------------------------
 buf = oled.buf
+# oled.buf has a 1-byte header (0x40 = I2C data command)
+# Pixel data starts at buf[1], not buf[0]
+BUF_START = 1
 
 def fast_text(text, x, page):
     """Write text directly to framebuffer -- 13x faster than oled.text()."""
-    offset = page * 128 + x
+    offset = BUF_START + page * 128 + x
     for ch in text:
         idx = ord(ch) * 5
-        if offset + 5 > 1024:
+        if offset + 5 > len(buf):
             break
         buf[offset] = FONT[idx]
         buf[offset + 1] = FONT[idx + 1]
@@ -56,7 +59,7 @@ def fast_text(text, x, page):
 
 def clear_pages(start, end):
     """Clear a range of pages (8px rows each)."""
-    for i in range(start * 128, (end + 1) * 128):
+    for i in range(BUF_START + start * 128, BUF_START + (end + 1) * 128):
         buf[i] = 0
 
 # -- Joystick calibration (from test_joystick.py) ---------------------

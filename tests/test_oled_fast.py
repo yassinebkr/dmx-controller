@@ -41,6 +41,9 @@ except OSError:
 # It's a bytearray of 1024 bytes (128 × 8 pages)
 # Byte at index (page * 128 + col) controls 8 vertical pixels at that column
 buf = oled.buf
+# oled.buf has a 1-byte header (0x40 = I2C data command)
+# Pixel data starts at buf[1], not buf[0]
+BUF_START = 1
 
 def fast_text(text, x, page):
     """
@@ -51,10 +54,10 @@ def fast_text(text, x, page):
     ~20x faster than oled.text() because we copy font bytes
     directly instead of setting pixels one at a time.
     """
-    offset = page * 128 + x
+    offset = BUF_START + page * 128 + x
     for ch in text:
         idx = ord(ch) * 5
-        if offset + 5 > 1024:
+        if offset + 5 > len(buf):
             break  # don't overflow buffer
         buf[offset] = FONT[idx]
         buf[offset + 1] = FONT[idx + 1]
@@ -65,7 +68,7 @@ def fast_text(text, x, page):
 
 def clear_page(page):
     """Clear one page (8 pixel rows) -- much faster than fill(0)."""
-    start = page * 128
+    start = BUF_START + page * 128
     for i in range(128):
         buf[start + i] = 0
 
