@@ -34,8 +34,8 @@ import busio
 
 PAN_ID    = "1234"   # Network ID (0-65535) — must match both modules
 CHANNEL   = "0C"     # Channel 12 in hex (valid: 0B-1A = 11-26) — must match both
-MY_ADDR   = "0001"   # This module's 16-bit address in hex (controller = 1)
-DEST_ADDR = "0002"   # Destination address in hex (PC receiver = 2)
+MY_ADDR   = "1"   # This module's 16-bit address in hex (controller = 1)
+DEST_ADDR = "2"   # Destination address in hex (PC receiver = 2)
 BAUD      = "3"      # Baud rate index: 3 = 9600
 
 # ── End Configuration ────────────────────────────────────────────
