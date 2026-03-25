@@ -41,9 +41,9 @@ except OSError:
 # It's a bytearray of 1024 bytes (128 × 8 pages)
 # Byte at index (page * 128 + col) controls 8 vertical pixels at that column
 buf = oled.buf
-# oled.buf has a 1-byte header (0x40 = I2C data command)
-# Pixel data starts at buf[1], not buf[0]
-BUF_START = 1
+# oled.buf is the raw framebuffer (1024 bytes, no header)
+# oled.buffer is the I2C buffer (1025 bytes, 0x40 header + data)
+BUF_START = 0
 
 def fast_text(text, x, page):
     """
