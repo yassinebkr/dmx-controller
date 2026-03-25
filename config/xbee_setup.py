@@ -34,7 +34,7 @@ def send_at(cmd):
     time.sleep(0.5)
     resp = uart.read(64)
     if resp:
-        txt = resp.decode("utf-8", errors="replace").strip()
+        txt = resp.decode().strip()
         print(f"  {cmd:12s} -> {txt}")
     else:
         print(f"  {cmd:12s} -> No response!")
