@@ -59,7 +59,9 @@ def fast_text(text, x, page):
 
 def clear_pages(start, end):
     """Clear a range of pages (8px rows each)."""
-    for i in range(BUF_START + start * 128, BUF_START + (end + 1) * 128):
+    begin = BUF_START + start * 128
+    stop = min(BUF_START + (end + 1) * 128, len(buf))
+    for i in range(begin, stop):
         buf[i] = 0
 
 # -- Joystick calibration (from test_joystick.py) ---------------------
@@ -123,7 +125,7 @@ def num_to_str(n):
     return s
 
 # -- Draw static header (once) ----------------------------------------
-clear_pages(0, 7)
+clear_pages(0, 6)
 fast_text("DMX Controller", 0, 0)
 fast_text("----------------", 0, 1)
 oled.show()

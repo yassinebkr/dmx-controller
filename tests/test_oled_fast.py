@@ -69,8 +69,9 @@ def fast_text(text, x, page):
 def clear_page(page):
     """Clear one page (8 pixel rows) -- much faster than fill(0)."""
     start = BUF_START + page * 128
-    for i in range(128):
-        buf[start + i] = 0
+    stop = min(start + 128, len(buf))
+    for i in range(start, stop):
+        buf[i] = 0
 
 def clear_pages(start_page, end_page):
     """Clear a range of pages."""
