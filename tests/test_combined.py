@@ -124,10 +124,26 @@ def num_to_str(n):
         s = " " + s
     return s
 
+# -- Page layout -------------------------------------------------------
+# 8 pages (0-7), each 8 pixels tall, total 64 pixels
+# Spread 6 lines across all 8 pages for full screen coverage:
+#   Page 0 (rows 0-7):   Header
+#   Page 1 (rows 8-15):  Separator
+#   Page 2 (rows 16-23): Joystick XY
+#   Page 3 (rows 24-31): Z rotation
+#   Page 5 (rows 40-47): Direction
+#   Page 7 (rows 56-63): Button info
+PG_HEAD = 0
+PG_SEP  = 1
+PG_XY   = 2
+PG_Z    = 3
+PG_DIR  = 5
+PG_BTN  = 7
+
 # -- Draw static header (once) ----------------------------------------
-clear_pages(0, 6)
-fast_text("DMX Controller", 0, 0)
-fast_text("----------------", 0, 1)
+clear_pages(0, 7)
+fast_text("DMX Controller", 0, PG_HEAD)
+fast_text("----------------", 0, PG_SEP)
 oled.show()
 
 # -- Main loop ---------------------------------------------------------
@@ -148,28 +164,31 @@ try:
         jy = map_cal(read_joy(joy_y), CAL_Y)
         jz = map_cal(read_joy(joy_z), CAL_Z)
 
-        # Clear only dynamic pages (2-6), keep header
-        clear_pages(2, 6)
+        # Clear only dynamic pages, keep header (pages 0-1)
+        clear_pages(PG_XY, PG_XY)
+        clear_pages(PG_Z, PG_Z)
+        clear_pages(PG_DIR, PG_DIR)
+        clear_pages(PG_BTN, PG_BTN)
 
         # Joystick XY
-        fast_text("X:" + num_to_str(jx) + " Y:" + num_to_str(jy), 0, 2)
+        fast_text("X:" + num_to_str(jx) + " Y:" + num_to_str(jy), 0, PG_XY)
 
         # Z rotation with bar
         zabs = abs(jz) // 10
         if jz > 0:
-            fast_text("Z: CW  " + "=" * zabs, 0, 3)
+            fast_text("Z: CW  " + "=" * zabs, 0, PG_Z)
         elif jz < 0:
-            fast_text("Z: CCW " + "=" * zabs, 0, 3)
+            fast_text("Z: CCW " + "=" * zabs, 0, PG_Z)
         else:
-            fast_text("Z: ---", 0, 3)
+            fast_text("Z: ---", 0, PG_Z)
 
         # Direction
         dx = "R" if jx > 15 else ("L" if jx < -15 else "-")
         dy = "U" if jy > 15 else ("D" if jy < -15 else "-")
-        fast_text("Dir: " + dx + " " + dy, 0, 4)
+        fast_text("Dir: " + dx + " " + dy, 0, PG_DIR)
 
         # Button
-        fast_text("Btn:" + btn + " #" + str(press_count), 0, 5)
+        fast_text("Btn:" + btn + " #" + str(press_count), 0, PG_BTN)
 
         oled.show()
 
