@@ -104,6 +104,7 @@ enc_position = 0
 enc_btn_pressed = False
 enc_btn_count = 0
 enc_btn_last_time = 0  # For debounce
+enc_last_time = 0      # Encoder debounce
 
 # -- Helpers -----------------------------------------------------------
 
@@ -147,17 +148,25 @@ def num_to_str(n):
     return s
 
 def read_encoder():
-    """Read quadrature encoder with 1x decoding (falling edge on A)."""
-    global enc_last_a, enc_position
+    """Read quadrature encoder with 1x decoding + debounce."""
+    global enc_last_a, enc_position, enc_last_time
     a = enc_a.value
     b = enc_b.value
     delta = 0
+    now = time.monotonic()
+    
+    # Debounce: ignore edges within 5ms of last event
+    if (now - enc_last_time) < 0.005:
+        enc_last_a = a
+        return 0
+    
     if a != enc_last_a and not a:  # Falling edge on A
         if b:
             delta = 1
         else:
             delta = -1
         enc_position += delta
+        enc_last_time = now
     enc_last_a = a
     return delta
 
