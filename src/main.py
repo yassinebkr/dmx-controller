@@ -45,20 +45,22 @@ CAL_Z = (438, 3490, 36000)     # (min, centre, max)
 DEADZONE = 0.08  # 8% de deadzone au centre
 
 # ============================================================
-# SEUILS BOUTONS (ADC 16-bit)
-# À ajuster selon tes résistances réelles
+# SEUILS BOUTONS (ADC 16-bit, 2.2k pull-up)
+# Valeurs calculées : gap minimum = 5,957 counts
 # ============================================================
 
 BUTTON_THRESHOLDS = [
-    (0, 1000),      # B1 - 0Ω (court-circuit)
-    (5800, 7200),   # B2 - 220Ω
-    (13000, 16000), # B3 - 560Ω
-    (20000, 24000), # B4 - 1kΩ
-    (26000, 30000), # B5 - 1.5kΩ
-    (33000, 37000), # B6 - 2.2kΩ (ou 2.7kΩ)
-    (38000, 42000), # B7 - 3.9kΩ
-    (43000, 48000), # B8 - 4.7kΩ (ou 6.8kΩ)
+    (0,      2978),   # B1 - 0Ω
+    (2979,   9626),   # B2 - 220Ω
+    (9627,  16887),   # B3 - 560Ω
+    (16888, 23523),   # B4 - 1kΩ
+    (23524, 31339),   # B5 - 1.5kΩ
+    (31340, 39005),   # B6 - 2.7kΩ
+    (39006, 45707),   # B7 - 3.9kΩ
+    (45708, 57525),   # B8 - 6.8kΩ
 ]
+
+NO_PRESS_THRESHOLD = 57525
 
 # ============================================================
 # TABLES DE VALEURS DMX
@@ -218,7 +220,7 @@ def read_joystick():
 
 def read_buttons():
     """
-    Lit les boutons via le resistor ladder.
+    Lit les boutons via le resistor ladder (2.2k pull-up).
     
     Retourne une liste de 8 booléens (True = pressé).
     """
