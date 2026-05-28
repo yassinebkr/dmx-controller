@@ -1,5 +1,5 @@
 # test_buttons.py — Resistor ladder button test for XIAO RP2040
-# Wiring: A3 ← button ladder (22.2kΩ pull-up to 3.3V)
+# Wiring: A3 ← button ladder (2.2kΩ pull-up to 3.3V)
 # Buttons wired: B1=0Ω, B2=220Ω, B3=560Ω, B4=1kΩ, B5=1.5kΩ, B6=2.7kΩ, B7=3.9kΩ, B8=6.8kΩ
 #
 # CircuitPython ADC: 16-bit (0–65535), NOT raw 12-bit
@@ -33,31 +33,31 @@ except KeyboardInterrupt:
     print("\n--- Moving to Phase 2 ---\n")
 
 # --- Phase 2: Button detection with thresholds ---
-# Expected 16-bit ADC values (22.2kΩ pull-up, 3.3V):
-#   B1 (0Ω):    ~0       → threshold: 0–321
-#   B2 (220Ω):  ~643     → threshold: 322–1127
-#   B3 (560Ω):  ~1,612   → threshold: 1128–2218
-#   B4 (1kΩ):   ~2,824   → threshold: 2219–3485
-#   B5 (1.5kΩ): ~4,147   → threshold: 3486–5626
-#   B6 (2.7kΩ): ~7,106   → threshold: 5627–8449
-#   B7 (3.9kΩ): ~9,792   → threshold: 8450–12579
-#   B8 (6.8kΩ): ~15,366  → threshold: 12580–40450
-#   None:       ~65,535  → above 40450
+# Expected 16-bit ADC values (2.2kΩ pull-up, 3.3V):
+#   B1 (0Ω):    ~0       → threshold: 0–2978
+#   B2 (220Ω):  ~5,957   → threshold: 2979–9626
+#   B3 (560Ω):  ~13,296  → threshold: 9627–16887
+#   B4 (1kΩ):   ~20,479  → threshold: 16888–23523
+#   B5 (1.5kΩ): ~26,568  → threshold: 23524–31339
+#   B6 (2.7kΩ): ~36,111  → threshold: 31340–39005
+#   B7 (3.9kΩ): ~41,899  → threshold: 39006–45707
+#   B8 (6.8kΩ): ~49,515  → threshold: 45708–57525
+#   None:       ~65,535  → above 57525
 #
 # ADJUST these after seeing Phase 1 readings!
 
 BUTTONS = [
-    {"name": "B1 (0Ω)",    "low": 0,     "high": 321},
-    {"name": "B2 (220Ω)",  "low": 322,   "high": 1127},
-    {"name": "B3 (560Ω)",  "low": 1128,  "high": 2218},
-    {"name": "B4 (1kΩ)",   "low": 2219,  "high": 3485},
-    {"name": "B5 (1.5kΩ)", "low": 3486,  "high": 5626},
-    {"name": "B6 (2.7kΩ)", "low": 5627,  "high": 8449},
-    {"name": "B7 (3.9kΩ)", "low": 8450,  "high": 12579},
-    {"name": "B8 (6.8kΩ)", "low": 12580, "high": 40450},
+    {"name": "B1 (0Ω)",    "low": 0,     "high": 2978},
+    {"name": "B2 (220Ω)",  "low": 2979,  "high": 9626},
+    {"name": "B3 (560Ω)",  "low": 9627,  "high": 16887},
+    {"name": "B4 (1kΩ)",   "low": 16888, "high": 23523},
+    {"name": "B5 (1.5kΩ)", "low": 23524, "high": 31339},
+    {"name": "B6 (2.7kΩ)", "low": 31340, "high": 39005},
+    {"name": "B7 (3.9kΩ)", "low": 39006, "high": 45707},
+    {"name": "B8 (6.8kΩ)", "low": 45708, "high": 57525},
 ]
 
-NO_PRESS_THRESHOLD = 40450
+NO_PRESS_THRESHOLD = 57525
 
 def read_button_averaged(samples=5, delay=0.005):
     """Read ADC with averaging to reduce noise."""

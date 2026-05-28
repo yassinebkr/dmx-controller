@@ -27,7 +27,7 @@ Split PCB design:
 | A0/D0 | Joystick X | J2 |
 | A1/D1 | Joystick Y | J3 |
 | A2/D2 | Joystick Z (rotation) | J4 |
-| A3/D3 | Button ladder (22.2kΩ pull-up) | J5 |
+| A3/D3 | Button ladder (2.2kΩ pull-up) | J5 |
 | D4 (SDA) | OLED data | J1 |
 | D5 (SCL) | OLED clock | J1 |
 | D6 (TX) | XBee DIN | — |
@@ -38,21 +38,21 @@ Split PCB design:
 
 ## Button Resistor Ladder
 
-8 buttons on a single analog pin using individual resistors to GND with a **22.2kΩ pull-up** to 3.3V.
+8 buttons on a single analog pin using individual resistors to GND with a **2.2kΩ pull-up** to 3.3V.
 
 | Button | Resistor | Voltage | ADC (16-bit) | Threshold |
 |--------|----------|---------|-------------|-----------|
-| B1 | 0Ω | 0.000V | 0 | 0–321 |
-| B2 | 220Ω | 0.032V | 643 | 322–1,127 |
-| B3 | 560Ω | 0.081V | 1,612 | 1,128–2,218 |
-| B4 | 1kΩ | 0.142V | 2,824 | 2,219–3,485 |
-| B5 | 1.5kΩ | 0.209V | 4,147 | 3,486–5,626 |
-| B6 | 2.7kΩ | 0.358V | 7,106 | 5,627–8,449 |
-| B7 | 3.9kΩ | 0.493V | 9,792 | 8,450–12,579 |
-| B8 | 6.8kΩ | 0.774V | 15,366 | 12,580–40,450 |
-| Idle | 22.2kΩ (pull-up) | 3.300V | 65,535 | > 40,450 |
+| B1 | 0Ω | 0.000V | 0 | 0–2,978 |
+| B2 | 220Ω | 0.300V | 5,957 | 2,979–9,626 |
+| B3 | 560Ω | 0.670V | 13,296 | 9,627–16,887 |
+| B4 | 1kΩ | 1.031V | 20,479 | 16,888–23,523 |
+| B5 | 1.5kΩ | 1.338V | 26,568 | 23,524–31,339 |
+| B6 | 2.7kΩ | 1.818V | 36,111 | 31,340–39,005 |
+| B7 | 3.9kΩ | 2.110V | 41,899 | 39,006–45,707 |
+| B8 | 6.8kΩ | 2.493V | 49,515 | 45,708–57,525 |
+| Idle | 2.2kΩ (pull-up) | 3.300V | 65,535 | > 57,525 |
 
-All E24 standard values. Minimum gap: 643 counts (B1→B2). With 16-bit ADC and 5-sample averaging, noise margin is sufficient.
+All E24 standard values. Minimum gap: 5,957 counts (B1→B2). With 16-bit ADC and 5-sample averaging, noise margin is excellent.
 
 **Status:** Resistors soldered on daughterboard. Values confirmed working for B1–B3. B4–B8 need verification (thresholds updated in test scripts).
 
