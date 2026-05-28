@@ -161,6 +161,14 @@ def read_encoder():
     enc_last_a = a
     return delta
 
+# -- Debug print helper ------------------------------------------------
+# Set to True to see REPL debug output
+DEBUG = True
+
+def debug(msg):
+    if DEBUG:
+        print(msg)
+
 # -- Page layout -------------------------------------------------------
 # 8 pages (0-7), each 8 pixels tall, total 64 pixels
 #   Page 0 (rows 0-7):   Header
@@ -212,15 +220,20 @@ try:
         enc_delta = read_encoder()
         enc_btn_state = not enc_btn.value  # Active low
 
+        if enc_delta != 0:
+            debug(f"[ENC] delta={enc_delta:2d}  pos={enc_position:3d}  raw=A:{enc_a.value} B:{enc_b.value}")
+
         # Encoder button edge detection with debounce (50ms)
         now = time.monotonic()
         if enc_btn_state and not enc_btn_pressed and (now - enc_btn_last_time) > 0.05:
             enc_btn_count += 1
             enc_btn_pressed = True
             enc_btn_last_time = now
+            debug(f"[BTN] PRESSED  count={enc_btn_count}")
         elif not enc_btn_state and enc_btn_pressed and (now - enc_btn_last_time) > 0.05:
             enc_btn_pressed = False
             enc_btn_last_time = now
+            debug(f"[BTN] RELEASED count={enc_btn_count}")
 
         # Clear dynamic pages
         clear_pages(PG_XY, PG_XY)
