@@ -1,6 +1,6 @@
 # test_buttons.py — Resistor ladder button test for XIAO RP2040
-# Wiring: A3 ← button ladder (2kΩ pull-up to 3.3V)
-# Buttons wired: B1=0Ω, B2=220Ω, B3=560Ω (for now)
+# Wiring: A3 ← button ladder (22.2kΩ pull-up to 3.3V)
+# Buttons wired: B1=0Ω, B2=220Ω, B3=560Ω, B4=1kΩ, B5=1.5kΩ, B6=2.7kΩ, B7=3.9kΩ, B8=6.8kΩ
 #
 # CircuitPython ADC: 16-bit (0–65535), NOT raw 12-bit
 # The RP2040's 12-bit values get left-shifted to fill 16 bits
@@ -33,21 +33,31 @@ except KeyboardInterrupt:
     print("\n--- Moving to Phase 2 ---\n")
 
 # --- Phase 2: Button detection with thresholds ---
-# Expected 16-bit ADC values (2kΩ pull-up, 3.3V):
-#   B1 (0Ω):   ~0       → threshold: 0–3000
-#   B2 (220Ω): ~6,494   → threshold: 3000–10,000
-#   B3 (560Ω): ~14,338  → threshold: 10,000–20,000
-#   None:      ~65,535   → above 50,000
+# Expected 16-bit ADC values (22.2kΩ pull-up, 3.3V):
+#   B1 (0Ω):    ~0       → threshold: 0–321
+#   B2 (220Ω):  ~643     → threshold: 322–1127
+#   B3 (560Ω):  ~1,612   → threshold: 1128–2218
+#   B4 (1kΩ):   ~2,824   → threshold: 2219–3485
+#   B5 (1.5kΩ): ~4,147   → threshold: 3486–5626
+#   B6 (2.7kΩ): ~7,106   → threshold: 5627–8449
+#   B7 (3.9kΩ): ~9,792   → threshold: 8450–12579
+#   B8 (6.8kΩ): ~15,366  → threshold: 12580–40450
+#   None:       ~65,535  → above 40450
 #
 # ADJUST these after seeing Phase 1 readings!
 
 BUTTONS = [
-    {"name": "B1 (0Ω)",   "low": 0,     "high": 3000},
-    {"name": "B2 (220Ω)", "low": 3000,  "high": 10000},
-    {"name": "B3 (560Ω)", "low": 10000, "high": 20000},
+    {"name": "B1 (0Ω)",    "low": 0,     "high": 321},
+    {"name": "B2 (220Ω)",  "low": 322,   "high": 1127},
+    {"name": "B3 (560Ω)",  "low": 1128,  "high": 2218},
+    {"name": "B4 (1kΩ)",   "low": 2219,  "high": 3485},
+    {"name": "B5 (1.5kΩ)", "low": 3486,  "high": 5626},
+    {"name": "B6 (2.7kΩ)", "low": 5627,  "high": 8449},
+    {"name": "B7 (3.9kΩ)", "low": 8450,  "high": 12579},
+    {"name": "B8 (6.8kΩ)", "low": 12580, "high": 40450},
 ]
 
-NO_PRESS_THRESHOLD = 50000
+NO_PRESS_THRESHOLD = 40450
 
 def read_button_averaged(samples=5, delay=0.005):
     """Read ADC with averaging to reduce noise."""

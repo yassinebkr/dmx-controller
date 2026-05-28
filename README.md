@@ -38,22 +38,23 @@ Split PCB design:
 
 ## Button Resistor Ladder
 
-8 buttons on a single analog pin using individual resistors to GND with a 2kΩ pull-up to 3.3V.
+8 buttons on a single analog pin using individual resistors to GND with a **22.2kΩ pull-up** to 3.3V.
 
-| Button | Resistor | Voltage | ADC (16-bit) |
-|--------|----------|---------|-------------|
-| B1 | 0Ω | 0.000V | 0 |
-| B2 | 220Ω | 0.327V | 6,494 |
-| B3 | 560Ω | 0.722V | 14,338 |
-| B4 | 1kΩ | 1.100V | 21,845 |
-| B5 | 1.5kΩ | 1.414V | 28,086 |
-| B6 | 2.7kΩ | 1.896V | 37,655 |
-| B7 | 3.9kΩ | 2.183V | 43,351 |
-| B8 | 6.8kΩ | 2.550V | 50,636 |
+| Button | Resistor | Voltage | ADC (16-bit) | Threshold |
+|--------|----------|---------|-------------|-----------|
+| B1 | 0Ω | 0.000V | 0 | 0–321 |
+| B2 | 220Ω | 0.032V | 643 | 322–1,127 |
+| B3 | 560Ω | 0.081V | 1,612 | 1,128–2,218 |
+| B4 | 1kΩ | 0.142V | 2,824 | 2,219–3,485 |
+| B5 | 1.5kΩ | 0.209V | 4,147 | 3,486–5,626 |
+| B6 | 2.7kΩ | 0.358V | 7,106 | 5,627–8,449 |
+| B7 | 3.9kΩ | 0.493V | 9,792 | 8,450–12,579 |
+| B8 | 6.8kΩ | 0.774V | 15,366 | 12,580–40,450 |
+| Idle | 22.2kΩ (pull-up) | 3.300V | 65,535 | > 40,450 |
 
-All E24 standard values. Minimum gap: 359 counts (22× noise margin).
+All E24 standard values. Minimum gap: 643 counts (B1→B2). With 16-bit ADC and 5-sample averaging, noise margin is sufficient.
 
-**Note:** PCB received (CNC-milled, single-sided, through-hole). Resistors not soldered yet — values TBD.
+**Status:** Resistors soldered on daughterboard. Values confirmed working for B1–B3. B4–B8 need verification (thresholds updated in test scripts).
 
 ## Encoder
 
@@ -118,10 +119,11 @@ dmx-controller/
 │   └── Fiche presentation projet E62 - *.pdf
 ├── tests/                          # Hardware test scripts
 │   ├── test_oled.py                # OLED display test
-│   ├── test_buttons.py             # Button ladder ADC test
+│   ├── test_buttons.py             # Button ladder ADC test (8 buttons, 22.2k pull-up)
 │   ├── test_joystick.py            # Joystick with auto-calibration
 │   ├── test_combined.py            # All inputs + OLED display
 │   ├── test_xbee.py                # XBee bidirectional comms test
+│   ├── test_ec11.py                # Rotary encoder (quadrature + pushbutton)
 │   ├── test_oled_fast.py           # Fast framebuffer benchmark
 │   ├── test_oled_speed.py          # I2C bottleneck isolation
 │   ├── test_oled_displayio.py      # displayio alternative test
@@ -138,12 +140,12 @@ dmx-controller/
 - [x] OLED SSD1306 I2C display
 - [x] Button ladder (PCB received, resistors not soldered)
 - [x] Encoder (PEC12R, PCB mounted)
-- [x] Test scripts (oled, buttons, joystick, combined, xbee, fast, speed, displayio, buf)
+- [x] Test scripts (oled, buttons, joystick, combined, xbee, fast, speed, displayio, buf, ec11)
 - [x] XBee UART confirmed (firmware 8073)
 - [x] XBee network configured (PAN 1234, MY=1/DL=2)
 - [x] PCBs fabricated (CNC-milled, single-sided, through-hole)
 - [x] Wireless protocol defined (Mode 2, 10-byte packet, 20Hz)
-- [ ] Solder resistors on daughterboard
+- [x] Resistors soldered on daughterboard (values: idle 22.2k, B1 0Ω, B2 220Ω, B3 560Ω, B4 1kΩ, B5 1.5kΩ, B6 2.7kΩ, B7 3.9kΩ, B8 6.8kΩ)
 - [ ] Main application (src/main.py)
 - [ ] Integration test with receiver board
 
