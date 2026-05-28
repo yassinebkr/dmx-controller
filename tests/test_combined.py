@@ -148,20 +148,22 @@ def num_to_str(n):
     return s
 
 def read_encoder():
-    """Read quadrature encoder with 1x decoding + debounce."""
+    """Read quadrature encoder with 2x decoding (both edges on A)."""
     global enc_last_a, enc_position, enc_last_time
     a = enc_a.value
     b = enc_b.value
     delta = 0
     now = time.monotonic()
     
-    # Debounce: ignore edges within 5ms of last event
-    if (now - enc_last_time) < 0.005:
+    # Debounce: ignore edges within 3ms of last event
+    if (now - enc_last_time) < 0.003:
         enc_last_a = a
         return 0
     
-    if a != enc_last_a and not a:  # Falling edge on A
-        if b:
+    if a != enc_last_a:  # Any edge on A (rising or falling)
+        # Direction: compare A and B
+        # When A changes, if A == B → CW, if A != B → CCW
+        if a == b:
             delta = 1
         else:
             delta = -1
