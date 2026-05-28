@@ -100,7 +100,6 @@ NO_PRESS = 57525
 
 # -- Encoder state -----------------------------------------------------
 enc_last_a = enc_a.value
-enc_last_b = enc_b.value
 enc_position = 0
 enc_btn_pressed = False
 enc_btn_count = 0
@@ -148,26 +147,18 @@ def num_to_str(n):
     return s
 
 def read_encoder():
-    """Read quadrature encoder with 4x decoding (both edges on both channels)."""
-    global enc_last_a, enc_last_b, enc_position
+    """Read quadrature encoder with 1x decoding (falling edge on A)."""
+    global enc_last_a, enc_position
     a = enc_a.value
     b = enc_b.value
     delta = 0
-
-    # 4x decoding: check all transitions
-    if a != enc_last_a or b != enc_last_b:
-        # Gray code state: (prev_a, prev_b, a, b)
-        state = (enc_last_a << 3) | (enc_last_b << 2) | (a << 1) | b
-        # Valid transitions: CW = 0b0001, 0b0111, 0b1110, 0b1000
-        #                    CCW = 0b0010, 0b1011, 0b1101, 0b0100
-        if state in (0b0001, 0b0111, 0b1110, 0b1000):
+    if a != enc_last_a and not a:  # Falling edge on A
+        if b:
             delta = 1
-        elif state in (0b0010, 0b1011, 0b1101, 0b0100):
+        else:
             delta = -1
         enc_position += delta
-
     enc_last_a = a
-    enc_last_b = b
     return delta
 
 # -- Page layout -------------------------------------------------------
