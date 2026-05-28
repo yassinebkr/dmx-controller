@@ -1,12 +1,12 @@
 # test_ec11.py -- Rotary encoder (EC11 / PEC12R) test for XIAO RP2040
 # ===================================================================
 # Tests the quadrature encoder with pushbutton on pins D8/D9/D10.
-# Diagnostic version: checks idle pin states, shows raw values on change.
+# This version adds a raw value monitor to diagnose button issues.
 #
 # Wiring:
-#   D8 (GPIO 8)  → Encoder B (ROT_B)
-#   D9 (GPIO 9)  → Encoder A (ROT_A)
-#   D10 (GPIO 10)→ Encoder pushbutton (ROT_BTN)
+#   D8 (GPIO 2)  → Encoder B (ROT_B)
+#   D9 (GPIO 4)  → Encoder A (ROT_A)
+#   D10 (GPIO 3)→ Encoder pushbutton (ROT_BTN)
 #   GND          → Encoder common
 #
 # PEC12R-4115F-S0012 (HW-040 compatible):
@@ -57,12 +57,25 @@ if rot_btn.value == 0:
     print("  ⚠ BTN is LOW — button may be stuck pressed or D10 shorted to GND")
 
 print()
-print("Now rotate the encoder and press the button.")
-print("Raw states shown for every change.")
-print("Ctrl+C to stop")
+print("PHASE 1: Raw button monitor (press and hold the button)")
+print("Press Ctrl+C to move to Phase 2")
 print()
 
+# Phase 1: Raw button value monitor
+try:
+    while True:
+        btn_raw = rot_btn.value
+        if btn_raw == 0:
+            print(f"  BUTTON RAW = {btn_raw} (LOW — pressed detected!)")
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    print("\n--- Moving to Phase 2 ---\n")
+
 # --- Main loop --------------------------------------------------------
+print("PHASE 2: Full encoder + button test")
+print("Rotate encoder and press button. Ctrl+C to stop")
+print()
+
 try:
     while True:
         a = rot_a.value
