@@ -1,15 +1,17 @@
-# test_combined.py -- OLED + Buttons + Joystick combined test
-# ============================================================
+# test_combined.py -- OLED + Buttons + Joystick + Encoder combined test
+# ================================================================
 # Shows all inputs on the OLED in real-time using fast direct
 # framebuffer writes (~40 FPS vs 3 FPS with oled.text()).
 #
 # Requires: adafruit_ssd1306.mpy in lib/, font5x8.bin at CIRCUITPY root
 # Wiring: A0=JoyX, A1=JoyY, A2=JoyZ, A3=Buttons, D4=SDA, D5=SCL
+#         D8=EncB, D9=EncA, D10=EncBtn
 # Calibration: run test_joystick.py first to get CAL_X/Y/Z values
 
 import board
 import busio
 import analogio
+import digitalio
 import time
 import adafruit_ssd1306
 
@@ -22,6 +24,19 @@ joy_x = analogio.AnalogIn(board.A0)
 joy_y = analogio.AnalogIn(board.A1)
 joy_z = analogio.AnalogIn(board.A2)
 btn_adc = analogio.AnalogIn(board.A3)
+
+# Encoder pins with pull-ups
+enc_a = digitalio.DigitalInOut(board.D9)
+enc_a.direction = digitalio.Direction.INPUT
+enc_a.pull = digitalio.Pull.UP
+
+enc_b = digitalio.DigitalInOut(board.D8)
+enc_b.direction = digitalio.Direction.INPUT
+enc_b.pull = digitalio.Pull.UP
+
+enc_btn = digitalio.DigitalInOut(board.D10)
+enc_btn.direction = digitalio.Direction.INPUT
+enc_btn.pull = digitalio.Pull.UP
 
 # -- Load font ---------------------------------------------------------
 try:
@@ -83,6 +98,12 @@ BUTTONS = [
 ]
 NO_PRESS = 57525
 
+# -- Encoder state -----------------------------------------------------
+enc_last_a = enc_a.value
+enc_position = 0
+enc_btn_pressed = False
+enc_btn_count = 0
+
 # -- Helpers -----------------------------------------------------------
 
 def read_joy(pin):
@@ -124,20 +145,38 @@ def num_to_str(n):
         s = " " + s
     return s
 
+def read_encoder():
+    """Read quadrature encoder, return delta."""
+    global enc_last_a, enc_position
+    a = enc_a.value
+    b = enc_b.value
+    delta = 0
+    if a != enc_last_a and not a:  # Falling edge on A
+        if b:
+            delta = 1
+        else:
+            delta = -1
+        enc_position += delta
+    enc_last_a = a
+    return delta
+
 # -- Page layout -------------------------------------------------------
 # 8 pages (0-7), each 8 pixels tall, total 64 pixels
-# Spread 6 lines across all 8 pages for full screen coverage:
 #   Page 0 (rows 0-7):   Header
 #   Page 1 (rows 8-15):  Separator
 #   Page 2 (rows 16-23): Joystick XY
 #   Page 3 (rows 24-31): Z rotation
+#   Page 4 (rows 32-39): Encoder
 #   Page 5 (rows 40-47): Direction
+#   Page 6 (rows 48-55): (spare / encoder button)
 #   Page 7 (rows 56-63): Button info
 PG_HEAD = 0
 PG_SEP  = 1
 PG_XY   = 2
 PG_Z    = 3
+PG_ENC  = 4
 PG_DIR  = 5
+PG_EBTN = 6
 PG_BTN  = 7
 
 # -- Draw static header (once) ----------------------------------------
@@ -152,6 +191,10 @@ print("Combined test (fast OLED) -- Ctrl+C to stop")
 press_count = 0
 last_btn = "---"
 
+# Encoder tracking
+last_enc_pos = 0
+
+
 try:
     while True:
         # Read inputs
@@ -164,10 +207,23 @@ try:
         jy = map_cal(read_joy(joy_y), CAL_Y)
         jz = map_cal(read_joy(joy_z), CAL_Z)
 
-        # Clear only dynamic pages, keep header (pages 0-1)
+        # Encoder
+        enc_delta = read_encoder()
+        enc_btn_state = not enc_btn.value  # Active low
+
+        # Encoder button edge detection
+        if enc_btn_state and not enc_btn_pressed:
+            enc_btn_count += 1
+            enc_btn_pressed = True
+        elif not enc_btn_state and enc_btn_pressed:
+            enc_btn_pressed = False
+
+        # Clear dynamic pages
         clear_pages(PG_XY, PG_XY)
         clear_pages(PG_Z, PG_Z)
+        clear_pages(PG_ENC, PG_ENC)
         clear_pages(PG_DIR, PG_DIR)
+        clear_pages(PG_EBTN, PG_EBTN)
         clear_pages(PG_BTN, PG_BTN)
 
         # Joystick XY
@@ -182,10 +238,17 @@ try:
         else:
             fast_text("Z: ---", 0, PG_Z)
 
+        # Encoder position
+        fast_text("Enc:" + str(enc_position), 0, PG_ENC)
+
         # Direction
         dx = "R" if jx > 15 else ("L" if jx < -15 else "-")
         dy = "U" if jy > 15 else ("D" if jy < -15 else "-")
         fast_text("Dir: " + dx + " " + dy, 0, PG_DIR)
+
+        # Encoder button
+        ebtn_str = "PUSH" if enc_btn_state else "----"
+        fast_text("Ebtn:" + ebtn_str + " #" + str(enc_btn_count), 0, PG_EBTN)
 
         # Button
         fast_text("Btn:" + btn + " #" + str(press_count), 0, PG_BTN)
@@ -195,6 +258,7 @@ try:
 except KeyboardInterrupt:
     clear_pages(0, 7)
     fast_text("Test done!", 0, 2)
-    fast_text(str(press_count) + " presses", 0, 3)
+    fast_text("Btn:" + str(press_count) + " Enc:" + str(enc_position), 0, 3)
     oled.show()
-    print("\nDone. " + str(press_count) + " presses.")
+    print("\nDone. " + str(press_count) + " btn presses, encoder pos: " + str(enc_position))
+

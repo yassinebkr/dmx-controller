@@ -119,7 +119,7 @@ dmx-controller/
 │   └── Fiche presentation projet E62 - *.pdf
 ├── tests/                          # Hardware test scripts
 │   ├── test_oled.py                # OLED display test
-│   ├── test_buttons.py             # Button ladder ADC test (8 buttons, 22.2k pull-up)
+│   ├── test_buttons.py             # Button ladder ADC test (8 buttons, 2.2k pull-up)
 │   ├── test_joystick.py            # Joystick with auto-calibration
 │   ├── test_combined.py            # All inputs + OLED display
 │   ├── test_xbee.py                # XBee bidirectional comms test
@@ -145,7 +145,7 @@ dmx-controller/
 - [x] XBee network configured (PAN 1234, MY=1/DL=2)
 - [x] PCBs fabricated (CNC-milled, single-sided, through-hole)
 - [x] Wireless protocol defined (Mode 2, 10-byte packet, 20Hz)
-- [x] Resistors soldered on daughterboard (values: idle 22.2k, B1 0Ω, B2 220Ω, B3 560Ω, B4 1kΩ, B5 1.5kΩ, B6 2.7kΩ, B7 3.9kΩ, B8 6.8kΩ)
+- [x] Resistors soldered on daughterboard (values: idle 2.2k, B1 0Ω, B2 220Ω, B3 560Ω, B4 1kΩ, B5 1.5kΩ, B6 2.7kΩ, B7 3.9kΩ, B8 6.8kΩ)
 - [ ] Main application (src/main.py)
 - [ ] Integration test with receiver board
 
