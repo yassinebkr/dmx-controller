@@ -27,7 +27,7 @@ Split PCB design:
 | A0/D0 | Joystick X | J2 |
 | A1/D1 | Joystick Y | J3 |
 | A2/D2 | Joystick Z (rotation) | J4 |
-| A3/D3 | Button ladder (2kΩ pull-up) | J5 |
+| A3/D3 | Button ladder (22.2kΩ pull-up) | J5 |
 | D4 (SDA) | OLED data | J1 |
 | D5 (SCL) | OLED clock | J1 |
 | D6 (TX) | XBee DIN | — |

@@ -1,0 +1,52 @@
+@startuml
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<block>> #E3F2FD
+    BorderColor<<block>> #01579B
+    FontColor<<block>> #002F4F
+}
+skinparam class {
+    BackgroundColor<<external>> #FFFFFF
+    BorderColor<<external>> #37474F
+}
+
+' ===== BDD =====
+title Block Definition Diagram (BDD) — Console DMX
+
+class DMXConsole <<block>> {
+}
+class ControllerMCU <<block>> {
+}
+class WirelessRadio <<block>> {
+}
+class Display <<block>> {
+}
+class InputJoystick <<block>> {
+}
+class InputButtons <<block>> {
+}
+class InputEncoder <<block>> {
+}
+class XBeeReceiver <<external>> {
+}
+class ClubSpot150CT <<external>> {
+}
+
+DMXConsole *-- ControllerMCU
+DMXConsole *-- WirelessRadio
+DMXConsole *-- Display
+DMXConsole *-- InputJoystick
+DMXConsole *-- InputButtons
+DMXConsole *-- InputEncoder
+
+WirelessRadio ..> XBeeReceiver : «802.15.4»
+XBeeReceiver ..> ClubSpot150CT : «DMX512»
+
+note right of DMXConsole
+  '' Composition = losange plein noir
+  DMXConsole possède / contient
+  les 6 sous-blocs internes
+end note
+
+@enduml
