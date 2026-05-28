@@ -1,6 +1,7 @@
 # test_ec11.py -- Rotary encoder (EC11 / PEC12R) test for XIAO RP2040
 # ===================================================================
 # Tests the quadrature encoder with pushbutton on pins D8/D9/D10.
+# Diagnostic version: checks idle pin states, shows raw values on change.
 #
 # Wiring:
 #   D8 (GPIO 8)  → Encoder B (ROT_B)
@@ -10,15 +11,14 @@
 #
 # PEC12R-4115F-S0012 (HW-040 compatible):
 #   - 12 pulses per revolution (24 detents)
-#   - Pushbutton on shaft
-#   - No pull-ups needed (internal on XIAO, or use external)
+#   - Pushbutton on shaft (active LOW — connects to GND when pressed)
+#   - Internal pull-ups enabled (XIAO RP2040)
 
 import board
 import digitalio
 import time
 
 # --- Pin setup --------------------------------------------------------
-# Encoder A and B with internal pull-ups
 rot_a = digitalio.DigitalInOut(board.D9)
 rot_a.direction = digitalio.Direction.INPUT
 rot_a.pull = digitalio.Pull.UP
@@ -27,7 +27,6 @@ rot_b = digitalio.DigitalInOut(board.D8)
 rot_b.direction = digitalio.Direction.INPUT
 rot_b.pull = digitalio.Pull.UP
 
-# Pushbutton with internal pull-up
 rot_btn = digitalio.DigitalInOut(board.D10)
 rot_btn.direction = digitalio.Direction.INPUT
 rot_btn.pull = digitalio.Pull.UP
@@ -35,13 +34,31 @@ rot_btn.pull = digitalio.Pull.UP
 # --- State ------------------------------------------------------------
 position = 0
 last_a = rot_a.value
+last_b = rot_b.value
 btn_pressed = False
 
-print("=" * 40)
-print("EC11 ENCODER TEST")
-print("=" * 40)
-print("Rotate encoder: CW/CCW position")
-print("Press button: button state")
+print("=" * 50)
+print("EC11 ENCODER TEST — Diagnostic")
+print("=" * 50)
+print()
+
+# --- Wiring check -----------------------------------------------------
+print("WIRING CHECK (idle state, no touching):")
+print(f"  A (D9)  = {rot_a.value}  (should be 1 / HIGH)")
+print(f"  B (D8)  = {rot_b.value}  (should be 1 / HIGH)")
+print(f"  BTN(D10)= {rot_btn.value}  (should be 1 / HIGH — not pressed)")
+print()
+
+if rot_a.value == 0:
+    print("  ⚠ A is LOW — check if D9 is shorted to GND")
+if rot_b.value == 0:
+    print("  ⚠ B is LOW — check if D8 is shorted to GND")
+if rot_btn.value == 0:
+    print("  ⚠ BTN is LOW — button may be stuck pressed or D10 shorted to GND")
+
+print()
+print("Now rotate the encoder and press the button.")
+print("Raw states shown for every change.")
 print("Ctrl+C to stop")
 print()
 
@@ -50,27 +67,38 @@ try:
     while True:
         a = rot_a.value
         b = rot_b.value
-        btn = not rot_btn.value  # Active low (pulled up, pressed = GND)
+        btn_raw = rot_btn.value
+        btn = not btn_raw  # Active low
 
-        # Quadrature decoding: detect edge on A, check B for direction
-        if a != last_a and not a:  # Falling edge on A
-            if b:
-                position += 1
-                print(f"  CW  → pos: {position}")
-            else:
-                position -= 1
-                print(f"  CCW → pos: {position}")
-        last_a = a
+        # Detect ANY change
+        changed = (a != last_a) or (b != last_b) or (btn != btn_pressed)
 
-        # Button press detection (with simple debounce)
-        if btn and not btn_pressed:
-            print(f"  ▶ BUTTON PRESSED (pos: {position})")
-            btn_pressed = True
-        elif not btn and btn_pressed:
-            print(f"  ▶ BUTTON RELEASED (pos: {position})")
-            btn_pressed = False
+        if changed:
+            # Show raw pin states
+            states = f"A={a} B={b} BTN={btn_raw}({'PRESSED' if btn else 'released'})"
 
-        time.sleep(0.001)  # 1ms poll — encoder mechanical max ~2kHz
+            # Encoder logic
+            if a != last_a:
+                if a == b:
+                    position += 1
+                    print(f"  CW  pos={position:3d}  |  {states}")
+                else:
+                    position -= 1
+                    print(f"  CCW pos={position:3d}  |  {states}")
+            elif b != last_b:
+                # B changed without A — show it for debugging
+                print(f"  B-only change  |  {states}")
+            elif btn != btn_pressed:
+                if btn:
+                    print(f"  ▶ BUTTON PRESSED   |  {states}")
+                else:
+                    print(f"  ▶ BUTTON RELEASED  |  {states}")
+
+            last_a = a
+            last_b = b
+            btn_pressed = btn
+
+        time.sleep(0.001)
 
 except KeyboardInterrupt:
     print(f"\nDone. Final position: {position}")
