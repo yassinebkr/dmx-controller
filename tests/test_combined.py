@@ -100,6 +100,7 @@ NO_PRESS = 57525
 
 # -- Encoder state -----------------------------------------------------
 enc_last_a = enc_a.value
+enc_last_b = enc_b.value
 enc_position = 0
 enc_btn_pressed = False
 enc_btn_count = 0
@@ -148,28 +149,41 @@ def num_to_str(n):
     return s
 
 def read_encoder():
-    """Read quadrature encoder with 2x decoding (both edges on A)."""
-    global enc_last_a, enc_position, enc_last_time
+    """Read quadrature encoder with full state machine (4x decoding)."""
+    global enc_last_a, enc_last_b, enc_position, enc_last_time
     a = enc_a.value
     b = enc_b.value
     delta = 0
     now = time.monotonic()
-    
-    # Debounce: ignore edges within 3ms of last event
-    if (now - enc_last_time) < 0.003:
+
+    # Debounce: ignore edges within 2ms of last event
+    if (now - enc_last_time) < 0.002:
         enc_last_a = a
+        enc_last_b = b
         return 0
-    
-    if a != enc_last_a:  # Any edge on A (rising or falling)
-        # Direction: compare A and B
-        # When A changes, if A == B → CW, if A != B → CCW
-        if a == b:
+
+    # Only act when state changes
+    if a != enc_last_a or b != enc_last_b:
+        # Full state machine: compare current state to previous
+        # State = (last_a, last_b, a, b) as 4-bit value
+        state = (enc_last_a << 3) | (enc_last_b << 2) | (a << 1) | b
+
+        # Valid CW transitions: 0->1, 1->3, 3->2, 2->0
+        # (in Gray code: 00->01, 01->11, 11->10, 10->00)
+        if state in (0b0001, 0b0111, 0b1110, 0b1000):
             delta = 1
-        else:
+            enc_last_time = now
+        # Valid CCW transitions: 0->2, 2->3, 3->1, 1->0
+        # (in Gray code: 00->10, 10->11, 11->01, 01->00)
+        elif state in (0b0010, 0b1011, 0b1101, 0b0100):
             delta = -1
+            enc_last_time = now
+        # Invalid transitions (bounce/noise): ignore
+
         enc_position += delta
-        enc_last_time = now
+
     enc_last_a = a
+    enc_last_b = b
     return delta
 
 # -- Debug print helper ------------------------------------------------
@@ -283,7 +297,7 @@ try:
 
         oled.show()
 
-        # 1ms poll — matches test_ec11.py timing, prevents CPU spin
+        # 1ms poll - matches test_ec11.py timing, prevents CPU spin
         time.sleep(0.001)
 
 except KeyboardInterrupt:
