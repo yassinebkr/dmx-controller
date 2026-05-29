@@ -90,8 +90,11 @@ try:
             # Show raw pin states
             states = f"A={a} B={b} BTN={btn_raw}({'PRESSED' if btn else 'released'})"
 
-            # Encoder logic
-            if a != last_a:
+            # Encoder logic -- 1x decoding: rising edge of A only.
+            # Direction is read from B at the moment A rises. One count
+            # per detent. Phase-aliasing failures undercount (skip a
+            # click) instead of reversing direction.
+            if a and not last_a:
                 if a == b:
                     position += 1
                     print(f"  CW  pos={position:3d}  |  {states}")
@@ -99,8 +102,8 @@ try:
                     position -= 1
                     print(f"  CCW pos={position:3d}  |  {states}")
             elif b != last_b:
-                # B changed without A — show it for debugging
-                print(f"  B-only change  |  {states}")
+                # B changed (or A fell) without a counted edge — debug only
+                print(f"  B/A-fall change  |  {states}")
             elif btn != btn_pressed:
                 if btn:
                     print(f"  ▶ BUTTON PRESSED   |  {states}")
